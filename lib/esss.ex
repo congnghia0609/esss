@@ -58,6 +58,23 @@ defmodule ESSS do
     end
   end
 
+  defmodule Polynomial do
+    @moduledoc """
+    Evaluates a polynomial with coefficients specified in reverse order:
+      evaluatePolynomial([a, b, c, d], x):
+        return a + bx + cx^2 + dx^3
+    Horner's method: ((dx + c)x + b)x + a
+    """
+    def evaluate_polynomial(0, polynomial, part, value, result) do
+      result = Integer.mod(result * value + ESSS.get_matrix_2d(polynomial, part, 0), ESSS.get_prime)
+      result
+    end
+    def evaluate_polynomial(s, polynomial, part, value, result) do
+      result = Integer.mod(result * value + ESSS.get_matrix_2d(polynomial, part, s), ESSS.get_prime)
+      evaluate_polynomial(s-1, polynomial, part, value, result)
+    end
+  end
+
   @doc """
   Update an Element in a 2D Matrix(mxn) at index x-row, y-column
   """
