@@ -66,12 +66,36 @@ defmodule ESSSTest do
     value = 9
     x = 2
     y = 3
+    # Create a 2-row, 3-column zero matrix
     zero_matrix = ESSS.gen_zero_matrix_2d(x, y)
     # IO.inspect(zero_matrix) # [[0, 0, 0], [0, 0, 0]]
     zero_matrix = ESSS.update_matrix_2d(zero_matrix, 0, 1, value)
     # IO.inspect(zero_matrix) # [[0, 9, 0], [0, 0, 0]]
     v = ESSS.get_matrix_2d(zero_matrix, 0, 1)
     # IO.puts(v) # 9
+    assert v == value
+  end
+
+  test "Test matrix 3d" do
+    # Create a 2-layer, 3-row, 4-column zero matrix
+    l = 2
+    m = 3
+    n = 4
+    zero_3d_matrix = ESSS.gen_zero_matrix_3d(l, m, n)
+    # IO.inspect(zero_3d_matrix)
+    # [
+    #   [[0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]],
+    #   [[0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]]
+    # ]
+    value = 9
+    zero_3d_matrix = ESSS.update_matrix_3d(zero_3d_matrix, 0, 1, 2, 9)
+    # IO.inspect(zero_3d_matrix)
+    # [
+    #   [[0, 0, 0, 0], [0, 0, 9, 0], [0, 0, 0, 0]],
+    #   [[0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]]
+    # ]
+    v = ESSS.get_matrix_3d(zero_3d_matrix, 0, 1, 2)
+    # IO.puts(v)
     assert v == value
   end
 end

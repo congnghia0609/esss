@@ -59,7 +59,7 @@ defmodule ESSS do
   end
 
   @doc """
-  Update value of matrix[x][y] at index row x and index column y
+  Update an Element in a 2D Matrix(mxn) at index x-row, y-column
   """
   def update_matrix_2d(matrix, x, y, value) do
     updated_matrix = List.replace_at(matrix, x, List.replace_at(Enum.at(matrix, x), y, value))
@@ -67,7 +67,7 @@ defmodule ESSS do
   end
 
   @doc """
-  Get value of matrix[x][y] at index row x and index column y
+  Get an Element in a 2D Matrix(mxn) at index x-row, y-column
   """
   def get_matrix_2d(matrix, x, y) do
     value = Enum.at(Enum.at(matrix, x), y)
@@ -75,10 +75,39 @@ defmodule ESSS do
   end
 
   @doc """
-  Generate matrix[x][y] init all zero with x row and y column
+  Create a Zero Matrix(mxn) m row and n column
   """
   def gen_zero_matrix_2d(x, y) do
     zero_matrix = List.duplicate(List.duplicate(0, y), x)
     zero_matrix
   end
+
+  @doc """
+  Create a l-layer, m-row, n-column zero matrix(lxmxn)
+  """
+  def gen_zero_matrix_3d(l, m, n) do
+    zero_3d_matrix = List.duplicate(List.duplicate(List.duplicate(0, n), m), l)
+    zero_3d_matrix
+  end
+
+  @doc """
+  Update an Element in a 3D Matrix(lxmxn) at index x-layer, y-row, z-column
+  """
+  def update_matrix_3d(matrix_3d, x, y, z, value) do
+    updated_matrix = List.replace_at(matrix_3d, x,
+      List.replace_at(Enum.at(matrix_3d, x), y,
+        List.replace_at(Enum.at(Enum.at(matrix_3d, x), y), z, value)
+      )
+    )
+    updated_matrix
+  end
+
+  @doc """
+  Get an Element in a 3D Matrix(lxmxn) at index x-layer, y-row, z-column
+  """
+  def get_matrix_3d(matrix_3d, x, y, z) do
+    value = Enum.at(Enum.at(Enum.at(matrix_3d, x), y), z)
+    value
+  end
+
 end
