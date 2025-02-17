@@ -6,19 +6,6 @@ defmodule ESSS do
   Documentation for `ESSS`.
   """
 
-  # @doc """
-  # Hello world.
-
-  # ## Examples
-
-  #     iex> ESSS.hello()
-  #     :world
-
-  # """
-  # def hello do
-  #   :world
-  # end
-
   # The largest PRIME 256-bit
   # https://primes.utm.edu/lists/2small/200bit.html
   # prime = 2^n - k = 2^256 - 189
@@ -61,5 +48,37 @@ defmodule ESSS do
   """
   def from_hex(hex) do
     String.to_integer(hex, 16)
+  end
+
+  defmodule UniqueList do
+    def generate(0, set), do: MapSet.to_list(set)
+    def generate(n, set) do
+      random_num = ESSS.random_number()
+      generate(n-1, MapSet.put(set, random_num))
+    end
+  end
+
+  @doc """
+  Update value of matrix[x][y] at index row x and index column y
+  """
+  def update_matrix_2d(matrix, x, y, value) do
+    updated_matrix = List.replace_at(matrix, x, List.replace_at(Enum.at(matrix, x), y, value))
+    updated_matrix
+  end
+
+  @doc """
+  Get value of matrix[x][y] at index row x and index column y
+  """
+  def get_matrix_2d(matrix, x, y) do
+    value = Enum.at(Enum.at(matrix, x), y)
+    value
+  end
+
+  @doc """
+  Generate matrix[x][y] init all zero with x row and y column
+  """
+  def gen_zero_matrix_2d(x, y) do
+    zero_matrix = List.duplicate(List.duplicate(0, y), x)
+    zero_matrix
   end
 end
