@@ -75,6 +75,29 @@ defmodule ESSS do
     end
   end
 
+  defmodule EncodeSecret do
+    def encode_secret(step, count, hex_secret, result) when count - step < count do
+      i = count - step
+      sub = if (i + 1) * 64 < String.length(hex_secret) do
+        String.to_integer(String.slice(hex_secret, i * 64, 64), 16)
+      else
+        String.to_integer(String.pad_trailing(String.slice(hex_secret, i * 64, String.length(hex_secret) - (i * 64)), 64, "0"), 16)
+      end
+      result = result ++ [sub]
+      encode_secret(step-1, count, hex_secret, result)
+    end
+    def encode_secret(0, _count, _hex_secret, result) do
+      result
+    end
+  end
+
+  def split_secret_to_int(s) do
+    hex_secret = :binary.encode_hex(s)
+    count = div((String.length(hex_secret) + 63), 64) # ceil_div = div(a + b - 1, b)
+    result = ESSS.EncodeSecret.encode_secret(count, count, hex_secret, [])
+    result
+  end
+
   @doc """
   Update an Element in a 2D Matrix(mxn) at index x-row, y-column
   """
