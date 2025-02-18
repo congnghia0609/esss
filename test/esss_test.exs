@@ -226,4 +226,21 @@ defmodule ESSSTest do
         IO.puts(msg)
     end
   end
+
+  test "Test Encode Decode Base64URLSafe" do
+    number = 67356225285819719212258382314594931188352598651646313425411610888829358649431
+    # IO.inspect(number)
+
+    # encode
+    b64data = ESSS.to_base64(number)
+    # IO.inspect(b64data)
+    # IO.inspect(String.length(b64data))
+    assert b64data == "lOpFwywpCeVAcK0_LOKG-YtW71xyj1bX06CcW7VZMFc="
+    assert String.length(b64data) == 44
+
+    # decode
+    numb64decode = ESSS.from_base64(b64data)
+    # IO.inspect(numb64decode)
+    assert numb64decode == numb64decode
+  end
 end

@@ -50,6 +50,23 @@ defmodule ESSS do
     String.to_integer(hex, 16)
   end
 
+  @doc """
+  Returns the Int number base10 in base64 representation.
+  note: this is not a string representation; the base64 output is exactly 256 bits long.
+  """
+  def to_base64(number) do
+    number |> :binary.encode_unsigned() |> Base.url_encode64(padding: true)
+  end
+
+  @doc """
+  Returns the number base64 in base 10 Int representation.
+  note: this is not coming from a string representation; the base64 input
+  is exactly 256 bits long, and the output is an arbitrary size base 10 integer.
+  """
+  def from_base64(base64_str) do
+    base64_str |> Base.url_decode64!(padding: true) |> :binary.decode_unsigned()
+  end
+
   defmodule UniqueList do
     def generate(0, set), do: MapSet.to_list(set)
     def generate(n, set) do
