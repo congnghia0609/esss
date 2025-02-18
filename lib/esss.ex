@@ -91,11 +91,26 @@ defmodule ESSS do
     end
   end
 
-  def split_secret_to_int(s) do
-    hex_secret = :binary.encode_hex(s)
+  @doc """
+  Converts a byte array into a 256-bit Int, array based upon size of the input byte.
+  All values are right-padded to length 256, even if the most
+  significant bit is zero.
+  """
+  def split_secret_to_int(secret) do
+    hex_secret = :binary.encode_hex(secret)
     count = div((String.length(hex_secret) + 63), 64) # ceil_div = div(a + b - 1, b)
     result = ESSS.EncodeSecret.encode_secret(count, count, hex_secret, [])
     result
+  end
+
+  @doc """
+  Converts an array of Ints to the original byte array, removing any least significant nulls.
+  """
+  def merge_int_to_string(secrets) do
+    hex_data = Enum.map(secrets, fn item -> ESSS.to_hex(item) end) |> Enum.join("")
+    hex_data = String.replace_trailing(hex_data, "00", "")
+    secret = :binary.decode_hex(hex_data)
+    secret
   end
 
   @doc """

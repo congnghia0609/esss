@@ -99,13 +99,16 @@ defmodule ESSSTest do
     assert v == value
   end
 
-  test "Test EncodeSecret" do
+  test "Test EncodeSecret DecodeSecret" do
     s = "nghiatcxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
     arr = ESSS.split_secret_to_int(s)
-    IO.inspect(arr)
+    # IO.inspect(arr)
     # [49937119214509114343548691117920141602615245118674498473442528546336026425464,
     # 54490394935207621375798110592323721342715286901477912489156510121370884536440,
     # 54490394935207621375798110592323721342715286901477912489156510121370884536440,
     # 54490394935207621375798110592321034758823134506407685127331664012878869954560]
+    rs = ESSS.merge_int_to_string(arr)
+    # IO.inspect(rs)
+    assert rs == s
   end
 end
