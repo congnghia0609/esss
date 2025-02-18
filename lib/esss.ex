@@ -288,7 +288,173 @@ defmodule ESSS do
       result = for share <- 0..(shares-1) do
         ESSS.CreatePointSecret.create_point_secret(parts, parts, share, minimum, numbers, polynomial, "")
       end
-      result
+      {:ok, result}
+    rescue
+      e in ArgumentError -> {:error, e.message}
+    end
+  end
+
+  @doc """
+  Takes in a given string to check if it is a valid secret
+
+  Requirements:
+   	Length multiple of 128
+  	Can decode each 64 character block as Hex
+
+  Returns only success/failure (bool)
+  """
+  def is_valid_share_hex(candidate) do
+    if String.length(candidate) == 0 || Integer.mod(String.length(candidate), 128) != 0 do
+      raise ArgumentError, "Share is empty or invalid"
+    end
+
+    count = div(String.length(candidate), 64)
+    for i <- 0..(count-1) do
+      part = String.slice(candidate, i*64, 64)
+      decode = from_hex(part)
+      if decode <= 0 || decode >= @prime do
+        raise ArgumentError, "Share is invalid"
+      end
+    end
+  end
+
+  @doc """
+  Validator combine shares input.
+  """
+  def validator_combine(shares) do
+    if shares == nil || length(shares) == 0 do
+      raise ArgumentError, "List shares is NiL or empty"
+    end
+    for share <- shares do
+      is_valid_share_hex(share)
+    end
+  end
+
+  defmodule SetMatrix3DPointsXY do
+    def set_matrix_3d_points_xy(step, count, i, share, points) when count - step < count do
+      j = count - step
+      pair = String.slice(share, j*128, 128)
+      x = ESSS.from_hex(String.slice(pair, 0, 64))
+      y = ESSS.from_hex(String.slice(pair, 64, 64))
+      points = ESSS.update_matrix_3d(points, i, j, 0, x)
+      points = ESSS.update_matrix_3d(points, i, j, 1, y)
+      set_matrix_3d_points_xy(step-1, count, i, share, points)
+    end
+    def set_matrix_3d_points_xy(0, _count, _i, _share, points) do
+      points
+    end
+  end
+
+  defmodule SetMatrix3DPointsShares do
+    def set_matrix_3d_points_shares(step, count, shares, points) when count - step < count do
+      i = count - step
+      share = Enum.at(shares, i)
+      num_pair = div(String.length(share), 128)
+      points = ESSS.SetMatrix3DPointsXY.set_matrix_3d_points_xy(num_pair, num_pair, i, share, points)
+      set_matrix_3d_points_shares(step-1, count, shares, points)
+    end
+    def set_matrix_3d_points_shares(0, _count, _shares, points) do
+      points
+    end
+  end
+
+  @doc """
+  Takes a string array of shares encoded in Hex created via Shamir's Algorithm.
+  Each string must be of equal length of a multiple of 128 characters
+  as a single 128 character share is a pair of 256-bit numbers (x, y).
+  """
+  def decode_share_hex(shares) do
+    # Recreate the original object of x, y points, based upon number of shares
+    # and size of each share (number of parts in the secret).
+    num_share = length(shares)
+    parts = div(String.length(Enum.at(shares, 0)), 128)
+    points = gen_zero_matrix_3d(num_share, parts, 2)
+    points = ESSS.SetMatrix3DPointsShares.set_matrix_3d_points_shares(num_share, num_share, shares, points)
+    points
+  end
+
+  defmodule LPIProductLoop do
+    def lpi_product_loop(step, count, j, i, ax, points, numerator, denominator) when count - step < count do
+      k = count - step
+      if k != i do
+        # combine them via half products.
+        # x=0 ==> [(0-bx)/(ax-bx)] * ...
+        bx = ESSS.get_matrix_3d(points, k, j, 0)
+        numerator = Integer.mod((numerator * -bx), ESSS.get_prime())  # (0 - bx) * ...
+        denominator = Integer.mod((denominator * (ax - bx)), ESSS.get_prime())  # (ax - bx) * ...
+        lpi_product_loop(step-1, count, j, i, ax, points, numerator, denominator)
+      else
+        lpi_product_loop(step-1, count, j, i, ax, points, numerator, denominator)
+      end
+    end
+    def lpi_product_loop(0, _count, _j, _i, _ax, _points, numerator, denominator) do
+      {numerator, denominator}
+    end
+  end
+
+  defmodule LPISumLoop do
+    def lpi_sum_loop(step, count, j, points, secrets) when count - step < count do
+      i = count - step
+      # remember the current x and y values.
+      ax = ESSS.get_matrix_3d(points, i, j, 0)
+      ay = ESSS.get_matrix_3d(points, i, j, 1)
+      num_share = length(points)
+
+      # and for every other point...
+      {numerator, denominator} = ESSS.LPIProductLoop.lpi_product_loop(num_share, num_share, j, i, ax, points, 1, 1)
+
+      # LPI product: x=0, y = ay * [(x-bx)/(ax-bx)] * ...
+      # multiply together the points (ay)(numerator)(denominator)^-1 ...
+      fx = ay
+      fx = Integer.mod(fx * numerator, ESSS.get_prime())
+      fx = Integer.mod(fx * ESSS.modinv(denominator, ESSS.get_prime()), ESSS.get_prime())
+      # LPI sum: s = fx + fx + ...
+      sum = Integer.mod(Enum.at(secrets, j) + fx, ESSS.get_prime())
+      secrets = List.replace_at(secrets, j, sum)
+
+      lpi_sum_loop(step-1, count, j, points, secrets)
+    end
+    def lpi_sum_loop(0, _count, _j, _points, secrets) do
+      secrets
+    end
+  end
+
+  defmodule LPISecretsLoop do
+    def lpi_secrets_loop(step, count, points, secrets) when count - step < count do
+      j = count - step
+      num_share = length(points)
+      # and every share...
+      secrets = ESSS.LPISumLoop.lpi_sum_loop(num_share, num_share, j, points, secrets)
+      lpi_secrets_loop(step-1, count, points, secrets)
+    end
+    def lpi_secrets_loop(0, _count, _points, secrets) do
+      secrets
+    end
+  end
+
+  @doc """
+  Takes a string array of shares encoded in Base64 or Hex created via Shamir's Algorithm
+      Note: the polynomial will converge if the specified minimum number of shares
+            or more are passed to this function. Passing thus does not affect it
+            Passing fewer however, simply means that the returned secret is wrong.
+  """
+  def combine(shares) do
+    try do
+      validator_combine(shares)
+
+      # Recreate the original object of x, y points, based upon number of shares
+      # and size of each share (number of parts in the secret).
+      #
+      # points[shares][parts][2]
+      points = decode_share_hex(shares)
+
+      # Use Lagrange Polynomial Interpolation (LPI) to reconstruct the secrets.
+      # For each part of the secrets (clearest to iterate over)...
+      parts = length(Enum.at(points, 0))
+      secrets = List.duplicate(0, parts)
+      secrets = ESSS.LPISecretsLoop.lpi_secrets_loop(parts, parts, points, secrets)
+
+      {:ok, merge_int_to_string(secrets)}
     rescue
       e in ArgumentError -> {:error, e.message}
     end
