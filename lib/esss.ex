@@ -347,30 +347,30 @@ defmodule ESSS do
     end
   end
 
-  defmodule SetMatrix3DPointsXY do
-    def set_matrix_3d_points_xy(step, count, i, share, points) when count - step < count do
+  defmodule SetMatrix3DPointsXYHex do
+    def set_matrix_3d_points_xy_hex(step, count, i, share, points) when count - step < count do
       j = count - step
       pair = String.slice(share, j*128, 128)
       x = ESSS.from_hex(String.slice(pair, 0, 64))
       y = ESSS.from_hex(String.slice(pair, 64, 64))
       points = ESSS.update_matrix_3d(points, i, j, 0, x)
       points = ESSS.update_matrix_3d(points, i, j, 1, y)
-      set_matrix_3d_points_xy(step-1, count, i, share, points)
+      set_matrix_3d_points_xy_hex(step-1, count, i, share, points)
     end
-    def set_matrix_3d_points_xy(0, _count, _i, _share, points) do
+    def set_matrix_3d_points_xy_hex(0, _count, _i, _share, points) do
       points
     end
   end
 
-  defmodule SetMatrix3DPointsShares do
-    def set_matrix_3d_points_shares(step, count, shares, points) when count - step < count do
+  defmodule SetMatrix3DPointsSharesHex do
+    def set_matrix_3d_points_shares_hex(step, count, shares, points) when count - step < count do
       i = count - step
       share = Enum.at(shares, i)
       num_pair = div(String.length(share), 128)
-      points = ESSS.SetMatrix3DPointsXY.set_matrix_3d_points_xy(num_pair, num_pair, i, share, points)
-      set_matrix_3d_points_shares(step-1, count, shares, points)
+      points = ESSS.SetMatrix3DPointsXYHex.set_matrix_3d_points_xy_hex(num_pair, num_pair, i, share, points)
+      set_matrix_3d_points_shares_hex(step-1, count, shares, points)
     end
-    def set_matrix_3d_points_shares(0, _count, _shares, points) do
+    def set_matrix_3d_points_shares_hex(0, _count, _shares, points) do
       points
     end
   end
@@ -386,7 +386,7 @@ defmodule ESSS do
     num_share = length(shares)
     parts = div(String.length(Enum.at(shares, 0)), 128)
     points = gen_zero_matrix_3d(num_share, parts, 2)
-    points = ESSS.SetMatrix3DPointsShares.set_matrix_3d_points_shares(num_share, num_share, shares, points)
+    points = ESSS.SetMatrix3DPointsSharesHex.set_matrix_3d_points_shares_hex(num_share, num_share, shares, points)
     points
   end
 
