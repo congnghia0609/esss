@@ -53,8 +53,14 @@ defmodule ESSS do
   defmodule UniqueList do
     def generate(0, set), do: MapSet.to_list(set)
     def generate(n, set) do
+      before = MapSet.size(set)
       random_num = ESSS.random_number()
-      generate(n-1, MapSet.put(set, random_num))
+      set = MapSet.put(set, random_num)
+      if MapSet.size(set) > before do
+        generate(n-1, set)
+      else
+        generate(n, set)
+      end
     end
   end
 
