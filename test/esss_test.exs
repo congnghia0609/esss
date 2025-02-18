@@ -243,4 +243,9 @@ defmodule ESSSTest do
     # IO.inspect(numb64decode)
     assert numb64decode == numb64decode
   end
+
+  test "Test is_valid_share_base64" do
+    share = "coKbKOpKsucIF0hLgL6r2dOJpQ52TXnqU4Y4Znc26aU=Byrn3KrQn8Rq8-F49THePjAxy1fkixnjf7H-Q82tlNY=C-17nZaq6PPDfHCDPIpmVa928rUYAXxkhop-1dhyEqg=kn_fIXrpRCh1WluMW2EQddz9Vlj7m4SlUWnSAupD6yQ=yrT7uX2bF0AEdOUFQx1sd-SAYBj4vY0wLQaXkilp9LQ=65RU1AOhohmmN5dmKChFipsCdCraLIu1I0tlfUCdtdQ=_oHtNTo71hjx5RO_BaDJq2hiZTvpQjN6-O4n6zf8F_M=bd5XjTzbwgZIoXDCeqX_lGbCAIW1kepA-j6xRChI5Co="
+    ESSS.is_valid_share_base64(share)
+  end
 end

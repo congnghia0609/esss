@@ -318,7 +318,7 @@ defmodule ESSS do
    	Length multiple of 128
   	Can decode each 64 character block as Hex
 
-  Returns only success/failure (bool)
+  Returns raise if exist
   """
   def is_valid_share_hex(candidate) do
     if String.length(candidate) == 0 || Integer.mod(String.length(candidate), 128) != 0 do
@@ -329,6 +329,30 @@ defmodule ESSS do
     for i <- 0..(count-1) do
       part = String.slice(candidate, i*64, 64)
       decode = from_hex(part)
+      if decode <= 0 || decode >= @prime do
+        raise ArgumentError, "Share is invalid"
+      end
+    end
+  end
+
+  @doc """
+  Takes in a given string to check if it is a valid secret
+
+  Requirements:
+    Length multiple of 88
+    Can decode each 44 character block as Base64
+
+  Returns raise if exist
+  """
+  def is_valid_share_base64(candidate) do
+    if String.length(candidate) == 0 || Integer.mod(String.length(candidate), 88) != 0 do
+      raise ArgumentError, "Share is empty or invalid"
+    end
+
+    count = div(String.length(candidate), 44)
+    for i <- 0..(count-1) do
+      part = String.slice(candidate, i*44, 44)
+      decode = from_base64(part)
       if decode <= 0 || decode >= @prime do
         raise ArgumentError, "Share is invalid"
       end
@@ -387,6 +411,49 @@ defmodule ESSS do
     parts = div(String.length(Enum.at(shares, 0)), 128)
     points = gen_zero_matrix_3d(num_share, parts, 2)
     points = ESSS.SetMatrix3DPointsSharesHex.set_matrix_3d_points_shares_hex(num_share, num_share, shares, points)
+    points
+  end
+
+  defmodule SetMatrix3DPointsXYBase64 do
+    def set_matrix_3d_points_xy_base64(step, count, i, share, points) when count - step < count do
+      j = count - step
+      pair = String.slice(share, j*88, 88)
+      x = ESSS.from_hex(String.slice(pair, 0, 44))
+      y = ESSS.from_hex(String.slice(pair, 44, 44))
+      points = ESSS.update_matrix_3d(points, i, j, 0, x)
+      points = ESSS.update_matrix_3d(points, i, j, 1, y)
+      set_matrix_3d_points_xy_base64(step-1, count, i, share, points)
+    end
+    def set_matrix_3d_points_xy_base64(0, _count, _i, _share, points) do
+      points
+    end
+  end
+
+  defmodule SetMatrix3DPointsSharesBase64 do
+    def set_matrix_3d_points_shares_base64(step, count, shares, points) when count - step < count do
+      i = count - step
+      share = Enum.at(shares, i)
+      num_pair = div(String.length(share), 88)
+      points = ESSS.SetMatrix3DPointsXYBase64.set_matrix_3d_points_xy_base64(num_pair, num_pair, i, share, points)
+      set_matrix_3d_points_shares_base64(step-1, count, shares, points)
+    end
+    def set_matrix_3d_points_shares_base64(0, _count, _shares, points) do
+      points
+    end
+  end
+
+  @doc """
+  Takes a string array of shares encoded in Base64 created via Shamir's Algorithm.
+  Each string must be of equal length of a multiple of 88 characters
+  as a single 88 character share is a pair of 256-bit numbers (x, y).
+  """
+  def decode_share_base64(shares) do
+    # Recreate the original object of x, y points, based upon number of shares
+    # and size of each share (number of parts in the secret).
+    num_share = length(shares)
+    parts = div(String.length(Enum.at(shares, 0)), 88)
+    points = gen_zero_matrix_3d(num_share, parts, 2)
+    points = ESSS.SetMatrix3DPointsSharesBase64.set_matrix_3d_points_shares_base64(num_share, num_share, shares, points)
     points
   end
 
