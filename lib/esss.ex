@@ -64,23 +64,6 @@ defmodule ESSS do
     end
   end
 
-  defmodule Polynomial do
-    @moduledoc """
-    Evaluates a polynomial with coefficients specified in reverse order:
-      evaluatePolynomial([a, b, c, d], x):
-        return a + bx + cx^2 + dx^3
-    Horner's method: ((dx + c)x + b)x + a
-    """
-    def evaluate_polynomial(0, polynomial, part, value, result) do
-      result = Integer.mod(result * value + ESSS.get_matrix_2d(polynomial, part, 0), ESSS.get_prime)
-      result
-    end
-    def evaluate_polynomial(s, polynomial, part, value, result) do
-      result = Integer.mod(result * value + ESSS.get_matrix_2d(polynomial, part, s), ESSS.get_prime)
-      evaluate_polynomial(s-1, polynomial, part, value, result)
-    end
-  end
-
   defmodule EncodeSecret do
     def encode_secret(step, count, hex_secret, result) when count - step < count do
       i = count - step
@@ -98,9 +81,8 @@ defmodule ESSS do
   end
 
   @doc """
-  Converts a byte array into a 256-bit Int, array based upon size of the input byte.
-  All values are right-padded to length 256, even if the most
-  significant bit is zero.
+  Converts a string secret into a 256-bit Int array, array based upon size of the input string.
+  All values are right-padded to length 256, even if the most significant bit is zero.
   """
   def split_secret_to_int(secret) do
     hex_secret = :binary.encode_hex(secret)
@@ -110,7 +92,7 @@ defmodule ESSS do
   end
 
   @doc """
-  Converts an array of Ints to the original byte array, removing any least significant nulls.
+  Converts an array of Ints to the original string secret, removing any least significant nulls.
   """
   def merge_int_to_string(secrets) do
     hex_data = Enum.map(secrets, fn item -> ESSS.to_hex(item) end) |> Enum.join("")
@@ -136,10 +118,10 @@ defmodule ESSS do
   end
 
   @doc """
-  Create a Zero Matrix(mxn) m row and n column
+  Create a Zero Matrix(mxn) m-row and n-column
   """
-  def gen_zero_matrix_2d(x, y) do
-    zero_matrix = List.duplicate(List.duplicate(0, y), x)
+  def gen_zero_matrix_2d(m, n) do
+    zero_matrix = List.duplicate(List.duplicate(0, n), m)
     zero_matrix
   end
 
@@ -171,4 +153,139 @@ defmodule ESSS do
     value
   end
 
+  def validator(minimum, shares, secret) do
+    if minimum <= 0 || shares <= 0 do
+      raise ArgumentError, "minimum or shares is invalid"
+    end
+    if minimum > shares do
+      raise ArgumentError, "cannot require more shares then existing"
+    end
+    if String.length(secret) == 0 do
+      raise ArgumentError, "secret is empty"
+    end
+  end
+
+  defmodule SetPolynomialMinimum do
+    def set_polynomial_minimum(step, count, part, numbers, polynomial) when count - step < count do
+      i = count - step
+      x = Enum.at(numbers, (i - 1) + part * count)
+      polynomial = ESSS.update_matrix_2d(polynomial, part, i, x)
+      set_polynomial_minimum(step-1, count, part, numbers, polynomial)
+    end
+    def set_polynomial_minimum(0, _count, _part, _numbers, polynomial) do
+      polynomial
+    end
+  end
+
+  defmodule SetPolynomialPart do
+    def set_polynomial_part(step, count, minimum, numbers, secrets, polynomial) when count - step < count do
+      part = count - step
+      s = Enum.at(secrets, part)
+      polynomial = ESSS.update_matrix_2d(polynomial, part, 0, s)
+      polynomial = ESSS.SetPolynomialMinimum.set_polynomial_minimum(minimum-1, minimum, part, numbers, polynomial)
+      set_polynomial_part(step-1, count, minimum, numbers, secrets, polynomial)
+    end
+    def set_polynomial_part(0, _count, _minimum, _numbers, _secrets, polynomial) do
+      polynomial
+    end
+  end
+
+  defmodule Polynomial do
+    @moduledoc """
+    Evaluates a polynomial with coefficients specified in reverse order:
+      evaluatePolynomial([a, b, c, d], x):
+        return a + bx + cx^2 + dx^3
+    Horner's method: ((dx + c)x + b)x + a
+    """
+    def evaluate_polynomial(0, polynomial, part, value, result) do
+      result = Integer.mod(result * value + ESSS.get_matrix_2d(polynomial, part, 0), ESSS.get_prime)
+      result
+    end
+    def evaluate_polynomial(s, polynomial, part, value, result) do
+      if s > 0 do
+        result = Integer.mod(result * value + ESSS.get_matrix_2d(polynomial, part, s), ESSS.get_prime)
+        evaluate_polynomial(s-1, polynomial, part, value, result)
+      else
+        result
+      end
+    end
+  end
+
+  defmodule CreatePointSecret do
+    def create_point_secret(step, count, share, minimum, numbers, polynomial, result) when count - step < count do
+      j = count - step
+      x = Enum.at(numbers, j + share * count)
+      y = ESSS.get_matrix_2d(polynomial, j, minimum-1)
+      y = ESSS.Polynomial.evaluate_polynomial(minimum-2, polynomial, j, x, y)
+      s = ESSS.to_hex(x) <> ESSS.to_hex(y)
+      result = result <> s
+      create_point_secret(step-1, count, share, minimum, numbers, polynomial, result)
+    end
+    def create_point_secret(0, _count, _share, _minimum, _numbers, _polynomial, result) do
+      result
+    end
+  end
+
+  def create(minimum, shares, secret) do
+    try do
+      validator(minimum, shares, secret)
+
+      # Convert the secrets to its respective 256-bit Int representation.
+      secrets = split_secret_to_int(secret)
+      # IO.inspect(secrets)
+      # [49937119214509114343548691117920141602615245118674498473442528546336026425464,
+      # 54490394935207621375798110592323721342715286901477912489156510121370884536440,
+      # 54490394935207621375798110592323721342715286901477912489156510121370884536440,
+      # 54490394935207621375798110592321034758823134506407685127331664012878869954560]
+
+      # List unique numbers in the polynomial and array shares
+      parts = length(secrets)
+      n = parts * (minimum - 1) + parts * shares
+      numbers = ESSS.UniqueList.generate(n, MapSet.new())
+
+      # Create the polynomial of degree (minimum - 1); that is, the highest
+      # order term is (minimum-1), though as there is a constant term with
+      # order 0, there are (minimum) number of coefficients.
+      #
+      # However, the polynomial object is a 2d array, because we are constructing
+      # a different polynomial for each part of the secrets.
+      #
+      # polynomial[parts][minimum]
+      polynomial = gen_zero_matrix_2d(parts, minimum)
+      polynomial = SetPolynomialPart.set_polynomial_part(parts, parts, minimum, numbers, secrets, polynomial)
+      # IO.inspect(polynomial)
+      # [
+      #   [49937119214509114343548691117920141602615245118674498473442528546336026425464,
+      #    3331610641690559845569293452519156689672205589426266039906276531268282534352,
+      #    3449414794780110805560807496417991613898224245219726297399471851840616607059],
+      #   [54490394935207621375798110592323721342715286901477912489156510121370884536440,
+      #    8375165756357712393989323944985270402269773385317059146875412268233859265345,
+      #    20974281055222873671621056844777992892465701255324192649072266731850168978512],
+      #   [54490394935207621375798110592323721342715286901477912489156510121370884536440,
+      #    26551649736996319523308626035337288866988142478182735537656910010563570288933,
+      #    30168152852942397170062579339393015055940095427731866340022962626704826834008],
+      #   [54490394935207621375798110592321034758823134506407685127331664012878869954560,
+      #    37017445994805835743927682915662589031883038797457847082397075036203361423551,
+      #    41353851645870733950560656760353246098763225697893792174345635206631048655938]
+      # ]
+
+      # Create the points object; this holds the (x, y) points of each share.
+      # Again, because secrets is an array, each share could have multiple parts
+      # over which we are computing Shamir's Algorithm. The last dimension is
+      # always two, as it is storing an x, y pair of points.
+      #
+      # Note: this array is technically unnecessary due to creating result
+      # in the inner loop. Can disappear later if desired.
+      #
+      # For every share...
+      numbers = Enum.slice(numbers, parts * (minimum - 1), parts * shares)
+      # IO.puts("length numbers: #{length(numbers)} == #{parts * shares}")
+      result = for share <- 0..(shares-1) do
+        ESSS.CreatePointSecret.create_point_secret(parts, parts, share, minimum, numbers, polynomial, "")
+      end
+      result
+    rescue
+      e in ArgumentError -> {:error, e.message}
+    end
+  end
 end
