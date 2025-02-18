@@ -153,7 +153,7 @@ defmodule ESSS do
     value
   end
 
-  def validator(minimum, shares, secret) do
+  def validator_create(minimum, shares, secret) do
     if minimum <= 0 || shares <= 0 do
       raise ArgumentError, "minimum or shares is invalid"
     end
@@ -226,9 +226,14 @@ defmodule ESSS do
     end
   end
 
+  @doc """
+  Returns a new array of secret shares (encoding x,y pairs as Base64 or Hex strings)
+  created by Shamir's Secret Sharing Algorithm requiring a minimum number of
+  share to recreate, of length shares, from the input secret raw as a string.
+  """
   def create(minimum, shares, secret) do
     try do
-      validator(minimum, shares, secret)
+      validator_create(minimum, shares, secret)
 
       # Convert the secrets to its respective 256-bit Int representation.
       secrets = split_secret_to_int(secret)
