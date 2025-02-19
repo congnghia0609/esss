@@ -1,12 +1,9 @@
 # ESSS
 esss is an implement of Shamir's Secret Sharing Algorithm 256-bits in Elixir  
 
-**TODO: Add description**
-
 ## Installation
 
-If [available in Hex](https://hex.pm/docs/publish), the package can be installed
-by adding `esss` to your list of dependencies in `mix.exs`:
+Adding `esss` to your list of dependencies in `mix.exs`:  
 
 ```elixir
 def deps do
@@ -16,9 +13,67 @@ def deps do
 end
 ```
 
-Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
-and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
-be found at <https://hexdocs.pm/esss>.
+## 1. An implement of Shamir's Secret Sharing Algorithm 256-bits in Elixir
+
+### Usage
+**Use encode/decode Base64URL**  
+```elixir
+s = "nghiatcxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+
+# Creates a set of shares
+case ESSS.create(3, 6, s, true) do
+  {:ok, list} ->
+    # Case normal
+    case ESSS.combine(Enum.slice(list, 0, 3), true) do
+      {:ok, s1 } ->
+        # IO.inspect(s1)
+        assert s1 == s
+      {:error, msg} ->
+        IO.puts(msg)
+        assert false
+    end
+  {:error, msg} ->
+    IO.puts(msg)
+    assert false
+end
+
+# or
+
+# Creates a set of shares
+list = ESSS.create!(3, 6, s, true)
+# Combines shares into secret
+s1 = ESSS.combine!(Enum.slice(list, 0, 3), true)
+assert s1 == s
+```
+
+**Use encode/decode Hex**  
+```elixir
+s = "nghiatcxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+
+# Creates a set of shares
+case ESSS.create(3, 6, s, false) do
+  {:ok, list} ->
+    # Case normal
+    case ESSS.combine(Enum.slice(list, 0, 3), false) do
+      {:ok, s1 } ->
+        assert s1 == s
+      {:error, msg} ->
+        IO.puts(msg)
+        assert false
+    end
+  {:error, msg} ->
+    IO.puts(msg)
+    assert false
+end
+
+# or
+
+# Creates a set of shares
+list = ESSS.create!(3, 6, s, false)
+# Combines shares into secret
+s1 = ESSS.combine!(Enum.slice(list, 0, 3), false)
+assert s1 == s
+```
 
 
 # License
