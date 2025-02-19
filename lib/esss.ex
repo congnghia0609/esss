@@ -316,6 +316,19 @@ defmodule ESSS do
   end
 
   @doc """
+  Returns a new array of secret shares (encoding x,y pairs as Base64 or Hex strings)
+  created by Shamir's Secret Sharing Algorithm requiring a minimum number of
+  share to recreate, of length shares, from the input secret raw as a string.
+  """
+  def create!(minimum, shares, secret, is_base64) do
+    case create(minimum, shares, secret, is_base64) do
+      {:ok, result} ->
+        result
+      {:error, _msg} -> []
+    end
+  end
+
+  @doc """
   Takes in a given string to check if it is a valid secret
 
   Requirements:
@@ -554,6 +567,20 @@ defmodule ESSS do
       {:ok, merge_int_to_string(secrets)}
     rescue
       e in ArgumentError -> {:error, e.message}
+    end
+  end
+
+  @doc """
+  Takes a string array of shares encoded in Base64 or Hex created via Shamir's Algorithm
+      Note: the polynomial will converge if the specified minimum number of shares
+            or more are passed to this function. Passing thus does not affect it
+            Passing fewer however, simply means that the returned secret is wrong.
+  """
+  def combine!(shares, is_base64) do
+    case combine(shares, is_base64) do
+      {:ok, result} ->
+        result
+      {:error, _msg} -> ""
     end
   end
 end
