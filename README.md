@@ -3,6 +3,7 @@ sss is an implement of Shamir's Secret Sharing Algorithm 256-bits in Elixir
 
 ## Installation
 
+**SSS** has been published on [https://hex.pm/packages/sss](https://hex.pm/packages/sss)  
 Adding `sss` to your list of dependencies in `mix.exs`:  
 
 ```elixir
