@@ -229,16 +229,20 @@ defmodule ESSS do
   end
 
   defmodule CreatePointSecret do
-    def create_point_secret(step, count, share, minimum, numbers, polynomial, result) when count - step < count do
+    def create_point_secret(step, count, share, minimum, numbers, polynomial, is_base64, result) when count - step < count do
       j = count - step
       x = Enum.at(numbers, j + share * count)
       y = ESSS.get_matrix_2d(polynomial, j, minimum-1)
       y = ESSS.Polynomial.evaluate_polynomial(minimum-2, polynomial, j, x, y)
-      s = ESSS.to_hex(x) <> ESSS.to_hex(y)
+      s = if is_base64 do
+        ESSS.to_base64(x) <> ESSS.to_base64(y)
+      else
+        ESSS.to_hex(x) <> ESSS.to_hex(y)
+      end
       result = result <> s
-      create_point_secret(step-1, count, share, minimum, numbers, polynomial, result)
+      create_point_secret(step-1, count, share, minimum, numbers, polynomial, is_base64, result)
     end
-    def create_point_secret(0, _count, _share, _minimum, _numbers, _polynomial, result) do
+    def create_point_secret(0, _count, _share, _minimum, _numbers, _polynomial, _is_base64, result) do
       result
     end
   end
@@ -248,7 +252,7 @@ defmodule ESSS do
   created by Shamir's Secret Sharing Algorithm requiring a minimum number of
   share to recreate, of length shares, from the input secret raw as a string.
   """
-  def create(minimum, shares, secret) do
+  def create(minimum, shares, secret, is_base64) do
     try do
       validator_create(minimum, shares, secret)
 
@@ -303,7 +307,7 @@ defmodule ESSS do
       numbers = Enum.slice(numbers, parts * (minimum - 1), parts * shares)
       # IO.puts("length numbers: #{length(numbers)} == #{parts * shares}")
       result = for share <- 0..(shares-1) do
-        ESSS.CreatePointSecret.create_point_secret(parts, parts, share, minimum, numbers, polynomial, "")
+        ESSS.CreatePointSecret.create_point_secret(parts, parts, share, minimum, numbers, polynomial, is_base64, "")
       end
       {:ok, result}
     rescue
@@ -362,12 +366,16 @@ defmodule ESSS do
   @doc """
   Validator combine shares input.
   """
-  def validator_combine(shares) do
+  def validator_combine(shares, is_base64) do
     if shares == nil || length(shares) == 0 do
       raise ArgumentError, "List shares is NiL or empty"
     end
     for share <- shares do
-      is_valid_share_hex(share)
+      if is_base64 do
+        is_valid_share_base64(share)
+      else
+        is_valid_share_hex(share)
+      end
     end
   end
 
@@ -418,8 +426,8 @@ defmodule ESSS do
     def set_matrix_3d_points_xy_base64(step, count, i, share, points) when count - step < count do
       j = count - step
       pair = String.slice(share, j*88, 88)
-      x = ESSS.from_hex(String.slice(pair, 0, 44))
-      y = ESSS.from_hex(String.slice(pair, 44, 44))
+      x = ESSS.from_base64(String.slice(pair, 0, 44))
+      y = ESSS.from_base64(String.slice(pair, 44, 44))
       points = ESSS.update_matrix_3d(points, i, j, 0, x)
       points = ESSS.update_matrix_3d(points, i, j, 1, y)
       set_matrix_3d_points_xy_base64(step-1, count, i, share, points)
@@ -522,15 +530,20 @@ defmodule ESSS do
             or more are passed to this function. Passing thus does not affect it
             Passing fewer however, simply means that the returned secret is wrong.
   """
-  def combine(shares) do
+  def combine(shares, is_base64) do
     try do
-      validator_combine(shares)
+      validator_combine(shares, is_base64)
 
       # Recreate the original object of x, y points, based upon number of shares
       # and size of each share (number of parts in the secret).
       #
       # points[shares][parts][2]
-      points = decode_share_hex(shares)
+      points = if is_base64 do
+        decode_share_base64(shares)
+      else
+        decode_share_hex(shares)
+      end
+      # IO.inspect(points)
 
       # Use Lagrange Polynomial Interpolation (LPI) to reconstruct the secrets.
       # For each part of the secrets (clearest to iterate over)...

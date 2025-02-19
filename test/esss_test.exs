@@ -53,15 +53,6 @@ defmodule ESSSTest do
     # end
   end
 
-  # test "Test map" do
-  #   ms = MapSet.new()
-  #   for i <- 1..3 do
-  #     MapSet.put(ms, i)
-  #     IO.puts("for ms length = #{MapSet.size(ms)}")
-  #   end
-  #   IO.puts("ms length = #{MapSet.size(ms)}")
-  # end
-
   test "Test matrix 2d" do
     value = 9
     x = 2
@@ -137,42 +128,47 @@ defmodule ESSSTest do
     s = "nghiatcxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
 
     # creates a set of shares
-    case ESSS.create(3, 6, s) do
+    case ESSS.create(3, 6, s, false) do
       {:ok, list} ->
         # Case normal
-        case ESSS.combine(Enum.slice(list, 0, 3)) do
+        case ESSS.combine(Enum.slice(list, 0, 3), false) do
           {:ok, s1 } ->
             # IO.inspect(s1)
             assert s1 == s
           {:error, msg} ->
             IO.puts(msg)
+            assert false
         end
         # Case normal
-        case ESSS.combine(Enum.slice(list, 3, 3)) do
+        case ESSS.combine(Enum.slice(list, 3, 3), false) do
           {:ok, s1 } ->
             # IO.inspect(s1)
             assert s1 == s
           {:error, msg} ->
             IO.puts(msg)
+            assert false
         end
         # Case normal
-        case ESSS.combine(Enum.slice(list, 1, 4)) do
+        case ESSS.combine(Enum.slice(list, 1, 4), false) do
           {:ok, s1 } ->
             # IO.inspect(s1)
             assert s1 == s
           {:error, msg} ->
             IO.puts(msg)
+            assert false
         end
         # Case abnormal
-        case ESSS.combine(Enum.slice(list, 0, 2)) do
+        case ESSS.combine(Enum.slice(list, 0, 2), false) do
           {:ok, s1 } ->
             # IO.inspect(s1)
             assert s1 != s
           {:error, msg} ->
             IO.puts(msg)
+            assert false
         end
       {:error, msg} ->
         IO.puts(msg)
+        assert false
     end
     # IO.puts("-------------------------")
     # IO.inspect(list)
@@ -188,42 +184,47 @@ defmodule ESSSTest do
     s = "бар"  # Cyrillic
 
     # creates a set of shares
-    case ESSS.create(3, 6, s) do
+    case ESSS.create(3, 6, s, false) do
       {:ok, list} ->
         # Case normal
-        case ESSS.combine(Enum.slice(list, 0, 3)) do
+        case ESSS.combine(Enum.slice(list, 0, 3), false) do
           {:ok, s1 } ->
             # IO.inspect(s1)
             assert s1 == s
           {:error, msg} ->
             IO.puts(msg)
+            assert false
         end
         # Case normal
-        case ESSS.combine(Enum.slice(list, 3, 3)) do
+        case ESSS.combine(Enum.slice(list, 3, 3), false) do
           {:ok, s1 } ->
             # IO.inspect(s1)
             assert s1 == s
           {:error, msg} ->
             IO.puts(msg)
+            assert false
         end
         # Case normal
-        case ESSS.combine(Enum.slice(list, 1, 4)) do
+        case ESSS.combine(Enum.slice(list, 1, 4), false) do
           {:ok, s1 } ->
             # IO.inspect(s1)
             assert s1 == s
           {:error, msg} ->
             IO.puts(msg)
+            assert false
         end
         # Case abnormal
-        case ESSS.combine(Enum.slice(list, 0, 2)) do
+        case ESSS.combine(Enum.slice(list, 0, 2), false) do
           {:ok, s1 } ->
             # IO.inspect(s1)
             assert s1 != s
           {:error, msg} ->
             IO.puts(msg)
+            assert false
         end
       {:error, msg} ->
         IO.puts(msg)
+        assert false
     end
   end
 
@@ -247,5 +248,110 @@ defmodule ESSSTest do
   test "Test is_valid_share_base64" do
     share = "coKbKOpKsucIF0hLgL6r2dOJpQ52TXnqU4Y4Znc26aU=Byrn3KrQn8Rq8-F49THePjAxy1fkixnjf7H-Q82tlNY=C-17nZaq6PPDfHCDPIpmVa928rUYAXxkhop-1dhyEqg=kn_fIXrpRCh1WluMW2EQddz9Vlj7m4SlUWnSAupD6yQ=yrT7uX2bF0AEdOUFQx1sd-SAYBj4vY0wLQaXkilp9LQ=65RU1AOhohmmN5dmKChFipsCdCraLIu1I0tlfUCdtdQ=_oHtNTo71hjx5RO_BaDJq2hiZTvpQjN6-O4n6zf8F_M=bd5XjTzbwgZIoXDCeqX_lGbCAIW1kepA-j6xRChI5Co="
     ESSS.is_valid_share_base64(share)
+  end
+
+  test "Test full SSS base64" do
+    s = "nghiatcxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+
+    # creates a set of shares
+    case ESSS.create(3, 6, s, true) do
+      {:ok, list} ->
+        # IO.inspect(list)
+        # Case normal
+        case ESSS.combine(Enum.slice(list, 0, 3), true) do
+          {:ok, s1 } ->
+            # IO.inspect(s1)
+            assert s1 == s
+          {:error, msg} ->
+            IO.puts(msg)
+            assert false
+        end
+        # Case normal
+        case ESSS.combine(Enum.slice(list, 3, 3), true) do
+          {:ok, s1 } ->
+            # IO.inspect(s1)
+            assert s1 == s
+          {:error, msg} ->
+            IO.puts(msg)
+            assert false
+        end
+        # Case normal
+        case ESSS.combine(Enum.slice(list, 1, 4), true) do
+          {:ok, s1 } ->
+            # IO.inspect(s1)
+            assert s1 == s
+          {:error, msg} ->
+            IO.puts(msg)
+            assert false
+        end
+        # Case abnormal
+        case ESSS.combine(Enum.slice(list, 0, 2), true) do
+          {:ok, s1 } ->
+            # IO.inspect(s1)
+            assert s1 != s
+          {:error, msg} ->
+            IO.puts(msg)
+            assert false
+        end
+      {:error, msg} ->
+        IO.puts(msg)
+        assert false
+    end
+    # IO.puts("-------------------------")
+    # IO.inspect(list)
+    # ["LsfdJ7RBavmnuSvknyYRVVF3AzAAp3X_qLz1Hi2u618=0FszC6FCPhfv-CjaBIm2t68tBB7uKnK4wnMmZaOZQPs=N53AGgxtv86K5pjkpsNrVCjqYrkt0RHszIs5ptLJEOo=Q9HLCU_88-O2CPffbQfWw0fdKQTtUL9hEinL2qx7ebI=PYMVj9wk43m0RCq7SbLN0WZYZfPZL4fAKTu7fQy8L8I=9a3JRNMZcfYiH3wQ4YdGzyc7Y1-Xt9PIqMFcugufpvc=QRqi16Ll6GPNTotxJ2YUTpSzzL5ftPJwiyIYHt7DqcQ=Rb3rXZc7wnBUGG1bM1DrDMBZ6q4xrhpvCbSrLekoCAg=",
+    # "QfoZF4e7qx8y0bhg7l1cRboz5DkIACUy5NGcHOMeyrU=9SaGXcePbuiCmzZytY0B_y43b2mN9ViI0XYh7OfKZ3U=REQZe6abmS4I40zU0Ji5-HqZdK6ep4IkC24Lpfzk134=x_uiTWbr33JgkSYU_XqtTo5pqMo3K2rihSd2mmVCUxQ=Zp_tMVEKyM-Q_ONrNkahnQMEa4J6ZIJMZscrxCcWEno=xIaJDbUkaZz0_zaZno5SSV7crCqFfgWgxihWv7Q13lQ=a4o3Vyphvfn723gBce7gJCGVnexjiSZEL6U9KLUsGVI=HbFjsGd1UdmcHvODKVgvVXE_ceBCB7IdGZWWao4AfJw=",
+    # "bkXHs5iRgXW8znKzA5pJqwuJqdKwTlB-UQxFUyHh-q4=jZwGw-_-wJRKnxIowIZ_LXMH9SHEVaK5bgJnXo07snQ=cds77nHl2FDaYKQaqLkSrF2eb0GAzWxiD8nDkHzQ23M=CJgC7ngY4YSfe7cVpXfgqEBs6uEGdoX4Tg7hIaS3mG0=k1ZIc-900vOYXDodjyKPvqJLDTjmk_e-riGfgK3-P8s=ptJnEAxpGfTnnXyvLrSyr4agG_--7t_kfPClX0DkaIc=lHUgYZwQGJLRb516iXUOwODvDErMBojP3sNo01h9Ffg=Bw-1qd_io2Y4qWvHh48j4y_2tvjlWPeh9Qb0CstQhtw=",
+    # "nQ3XTGw8w4ua4DZQlhrbN6Tugr1RRg0CMiRigipKNb0=0VMPZAHFz562Tfv9BuM-o-T7adpP2KOkCJDz_PYaFT8=oUQwvZ_TFkyQJx-5SACHOLyBvQWFPilAs211gh-J-OM=VcJywX4Bq_uwpBS3k7-qAbLBMwegiYn84_4jaZHw0ro=p_td_brlADGWz8ydwKigtpl0dlMkj4l2-DVKNSORsyw=2aY-8CJqeEg4UfLfnloUeVURJBH1Knt-wkZIPl8-U8Q=tl7UZi43gFlG1cSLGc-IUGgYIntKbyfDMxp0YvehcIM=JRm_EpMCKLc1K99fepnK2M8if90duyk8nbHFRnV1qig=",
+    # "36G01gT5B9CJWA98tTsqeQNCzu5joECR2nsEZwSbNQA=rzIyBkVrJ5KDPMpWC-4Z3oXzEZNlyyfLbYBWK6uH13E=3-EqD0XSpD_uxsw4gPD4fcvGmUyBm_IUr8abjKi3n2w=d1xbu3kCUdvS3_IyqNI-m_pFsLMetqQPKk-Ih3dU_AA=5b1P80Rw2qDwd1IrBen63L3lY1RFm_SK6-BhnQ0NLjs=xuJ1A_oqR1fzXx5Yda_M6RrcCo5v8ipMg42fYqD0GsQ=52GF6OkqQ4-J7dR3OPnqpSZohP5qxBMWrTF5Vo___E8=rv6u7KckqoJIHGrE4xjC1JIijn633HEo1wJByqxz730=",
+    # "7OKrTmyFD6ACPKVMO7QhgBPwd5X43LxERHBEAL6etXQ=FIJVulL-viUacc3jaf9-UXQg-RPZeDHIGXLCcWVO4VQ=7qWXfKU8cFv05oYYGb5wb4H3nS8usHwkRqrvd2QzHOk=qV2-xBGh9zE9fSOsxDnGbTM5N097ehXwnfm0M_bTg7A=_E1_UP1AaW5VDNFa7xkTxRw_9M7vSu8R7cyrs6HrFp8=4-Nd_6uJa_JWB2l8al12qbRjVzgZiNFVNwtzIWIfhRg=_S2MBEGkmJrAQbDEA5ct1Ls6_8rAEbRGYtugctfiaNM=mB0hiCExdZxcqTGgmyt5OVYmhJcS3k4oXEc9WNVOF68="]
+  end
+
+  test "Test full SSS base64 with special cases not Latin symbols" do
+    s = "бар"  # Cyrillic
+
+    # creates a set of shares
+    case ESSS.create(3, 6, s, true) do
+      {:ok, list} ->
+        # Case normal
+        case ESSS.combine(Enum.slice(list, 0, 3), true) do
+          {:ok, s1 } ->
+            # IO.inspect(s1)
+            assert s1 == s
+          {:error, msg} ->
+            IO.puts(msg)
+            assert false
+        end
+        # Case normal
+        case ESSS.combine(Enum.slice(list, 3, 3), true) do
+          {:ok, s1 } ->
+            # IO.inspect(s1)
+            assert s1 == s
+          {:error, msg} ->
+            IO.puts(msg)
+            assert false
+        end
+        # Case normal
+        case ESSS.combine(Enum.slice(list, 1, 4), true) do
+          {:ok, s1 } ->
+            # IO.inspect(s1)
+            assert s1 == s
+          {:error, msg} ->
+            IO.puts(msg)
+            assert false
+        end
+        # Case abnormal
+        case ESSS.combine(Enum.slice(list, 0, 2), true) do
+          {:ok, s1 } ->
+            # IO.inspect(s1)
+            assert s1 != s
+          {:error, msg} ->
+            IO.puts(msg)
+            assert false
+        end
+      {:error, msg} ->
+        IO.puts(msg)
+        assert false
+    end
   end
 end
