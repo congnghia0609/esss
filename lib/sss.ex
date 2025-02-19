@@ -1,9 +1,9 @@
 # @author nghiatc
 # @since Feb 17, 2025
 
-defmodule ESSS do
+defmodule SSS do
   @moduledoc """
-  Documentation for `ESSS`.
+  Documentation for `SSS`.
   """
 
   # The largest PRIME 256-bit
@@ -71,7 +71,7 @@ defmodule ESSS do
     def generate(0, set), do: MapSet.to_list(set)
     def generate(n, set) do
       before = MapSet.size(set)
-      random_num = ESSS.random_number()
+      random_num = SSS.random_number()
       set = MapSet.put(set, random_num)
       if MapSet.size(set) > before do
         generate(n-1, set)
@@ -104,7 +104,7 @@ defmodule ESSS do
   def split_secret_to_int(secret) do
     hex_secret = :binary.encode_hex(secret)
     count = div((String.length(hex_secret) + 63), 64) # ceil_div = div(a + b - 1, b)
-    result = ESSS.EncodeSecret.encode_secret(count, count, hex_secret, [])
+    result = SSS.EncodeSecret.encode_secret(count, count, hex_secret, [])
     result
   end
 
@@ -112,7 +112,7 @@ defmodule ESSS do
   Converts an array of Ints to the original string secret, removing any least significant nulls.
   """
   def merge_int_to_string(secrets) do
-    hex_data = Enum.map(secrets, fn item -> ESSS.to_hex(item) end) |> Enum.join("")
+    hex_data = Enum.map(secrets, fn item -> SSS.to_hex(item) end) |> Enum.join("")
     hex_data = String.replace_trailing(hex_data, "00", "")
     secret = :binary.decode_hex(hex_data)
     secret
@@ -186,7 +186,7 @@ defmodule ESSS do
     def set_polynomial_minimum(step, count, part, numbers, polynomial) when count - step < count do
       i = count - step
       x = Enum.at(numbers, (i - 1) + part * count)
-      polynomial = ESSS.update_matrix_2d(polynomial, part, i, x)
+      polynomial = SSS.update_matrix_2d(polynomial, part, i, x)
       set_polynomial_minimum(step-1, count, part, numbers, polynomial)
     end
     def set_polynomial_minimum(0, _count, _part, _numbers, polynomial) do
@@ -198,8 +198,8 @@ defmodule ESSS do
     def set_polynomial_part(step, count, minimum, numbers, secrets, polynomial) when count - step < count do
       part = count - step
       s = Enum.at(secrets, part)
-      polynomial = ESSS.update_matrix_2d(polynomial, part, 0, s)
-      polynomial = ESSS.SetPolynomialMinimum.set_polynomial_minimum(minimum-1, minimum, part, numbers, polynomial)
+      polynomial = SSS.update_matrix_2d(polynomial, part, 0, s)
+      polynomial = SSS.SetPolynomialMinimum.set_polynomial_minimum(minimum-1, minimum, part, numbers, polynomial)
       set_polynomial_part(step-1, count, minimum, numbers, secrets, polynomial)
     end
     def set_polynomial_part(0, _count, _minimum, _numbers, _secrets, polynomial) do
@@ -215,12 +215,12 @@ defmodule ESSS do
     Horner's method: ((dx + c)x + b)x + a
     """
     def evaluate_polynomial(0, polynomial, part, value, result) do
-      result = Integer.mod(result * value + ESSS.get_matrix_2d(polynomial, part, 0), ESSS.get_prime)
+      result = Integer.mod(result * value + SSS.get_matrix_2d(polynomial, part, 0), SSS.get_prime)
       result
     end
     def evaluate_polynomial(s, polynomial, part, value, result) do
       if s > 0 do
-        result = Integer.mod(result * value + ESSS.get_matrix_2d(polynomial, part, s), ESSS.get_prime)
+        result = Integer.mod(result * value + SSS.get_matrix_2d(polynomial, part, s), SSS.get_prime)
         evaluate_polynomial(s-1, polynomial, part, value, result)
       else
         result
@@ -232,12 +232,12 @@ defmodule ESSS do
     def create_point_secret(step, count, share, minimum, numbers, polynomial, is_base64, result) when count - step < count do
       j = count - step
       x = Enum.at(numbers, j + share * count)
-      y = ESSS.get_matrix_2d(polynomial, j, minimum-1)
-      y = ESSS.Polynomial.evaluate_polynomial(minimum-2, polynomial, j, x, y)
+      y = SSS.get_matrix_2d(polynomial, j, minimum-1)
+      y = SSS.Polynomial.evaluate_polynomial(minimum-2, polynomial, j, x, y)
       s = if is_base64 do
-        ESSS.to_base64(x) <> ESSS.to_base64(y)
+        SSS.to_base64(x) <> SSS.to_base64(y)
       else
-        ESSS.to_hex(x) <> ESSS.to_hex(y)
+        SSS.to_hex(x) <> SSS.to_hex(y)
       end
       result = result <> s
       create_point_secret(step-1, count, share, minimum, numbers, polynomial, is_base64, result)
@@ -267,7 +267,7 @@ defmodule ESSS do
       # List unique numbers in the polynomial and array shares
       parts = length(secrets)
       n = parts * (minimum - 1) + parts * shares
-      numbers = ESSS.UniqueList.generate(n, MapSet.new())
+      numbers = SSS.UniqueList.generate(n, MapSet.new())
 
       # Create the polynomial of degree (minimum - 1); that is, the highest
       # order term is (minimum-1), though as there is a constant term with
@@ -307,7 +307,7 @@ defmodule ESSS do
       numbers = Enum.slice(numbers, parts * (minimum - 1), parts * shares)
       # IO.puts("length numbers: #{length(numbers)} == #{parts * shares}")
       result = for share <- 0..(shares-1) do
-        ESSS.CreatePointSecret.create_point_secret(parts, parts, share, minimum, numbers, polynomial, is_base64, "")
+        SSS.CreatePointSecret.create_point_secret(parts, parts, share, minimum, numbers, polynomial, is_base64, "")
       end
       {:ok, result}
     rescue
@@ -396,10 +396,10 @@ defmodule ESSS do
     def set_matrix_3d_points_xy_hex(step, count, i, share, points) when count - step < count do
       j = count - step
       pair = String.slice(share, j*128, 128)
-      x = ESSS.from_hex(String.slice(pair, 0, 64))
-      y = ESSS.from_hex(String.slice(pair, 64, 64))
-      points = ESSS.update_matrix_3d(points, i, j, 0, x)
-      points = ESSS.update_matrix_3d(points, i, j, 1, y)
+      x = SSS.from_hex(String.slice(pair, 0, 64))
+      y = SSS.from_hex(String.slice(pair, 64, 64))
+      points = SSS.update_matrix_3d(points, i, j, 0, x)
+      points = SSS.update_matrix_3d(points, i, j, 1, y)
       set_matrix_3d_points_xy_hex(step-1, count, i, share, points)
     end
     def set_matrix_3d_points_xy_hex(0, _count, _i, _share, points) do
@@ -412,7 +412,7 @@ defmodule ESSS do
       i = count - step
       share = Enum.at(shares, i)
       num_pair = div(String.length(share), 128)
-      points = ESSS.SetMatrix3DPointsXYHex.set_matrix_3d_points_xy_hex(num_pair, num_pair, i, share, points)
+      points = SSS.SetMatrix3DPointsXYHex.set_matrix_3d_points_xy_hex(num_pair, num_pair, i, share, points)
       set_matrix_3d_points_shares_hex(step-1, count, shares, points)
     end
     def set_matrix_3d_points_shares_hex(0, _count, _shares, points) do
@@ -431,7 +431,7 @@ defmodule ESSS do
     num_share = length(shares)
     parts = div(String.length(Enum.at(shares, 0)), 128)
     points = gen_zero_matrix_3d(num_share, parts, 2)
-    points = ESSS.SetMatrix3DPointsSharesHex.set_matrix_3d_points_shares_hex(num_share, num_share, shares, points)
+    points = SSS.SetMatrix3DPointsSharesHex.set_matrix_3d_points_shares_hex(num_share, num_share, shares, points)
     points
   end
 
@@ -439,10 +439,10 @@ defmodule ESSS do
     def set_matrix_3d_points_xy_base64(step, count, i, share, points) when count - step < count do
       j = count - step
       pair = String.slice(share, j*88, 88)
-      x = ESSS.from_base64(String.slice(pair, 0, 44))
-      y = ESSS.from_base64(String.slice(pair, 44, 44))
-      points = ESSS.update_matrix_3d(points, i, j, 0, x)
-      points = ESSS.update_matrix_3d(points, i, j, 1, y)
+      x = SSS.from_base64(String.slice(pair, 0, 44))
+      y = SSS.from_base64(String.slice(pair, 44, 44))
+      points = SSS.update_matrix_3d(points, i, j, 0, x)
+      points = SSS.update_matrix_3d(points, i, j, 1, y)
       set_matrix_3d_points_xy_base64(step-1, count, i, share, points)
     end
     def set_matrix_3d_points_xy_base64(0, _count, _i, _share, points) do
@@ -455,7 +455,7 @@ defmodule ESSS do
       i = count - step
       share = Enum.at(shares, i)
       num_pair = div(String.length(share), 88)
-      points = ESSS.SetMatrix3DPointsXYBase64.set_matrix_3d_points_xy_base64(num_pair, num_pair, i, share, points)
+      points = SSS.SetMatrix3DPointsXYBase64.set_matrix_3d_points_xy_base64(num_pair, num_pair, i, share, points)
       set_matrix_3d_points_shares_base64(step-1, count, shares, points)
     end
     def set_matrix_3d_points_shares_base64(0, _count, _shares, points) do
@@ -474,7 +474,7 @@ defmodule ESSS do
     num_share = length(shares)
     parts = div(String.length(Enum.at(shares, 0)), 88)
     points = gen_zero_matrix_3d(num_share, parts, 2)
-    points = ESSS.SetMatrix3DPointsSharesBase64.set_matrix_3d_points_shares_base64(num_share, num_share, shares, points)
+    points = SSS.SetMatrix3DPointsSharesBase64.set_matrix_3d_points_shares_base64(num_share, num_share, shares, points)
     points
   end
 
@@ -484,9 +484,9 @@ defmodule ESSS do
       if k != i do
         # combine them via half products.
         # x=0 ==> [(0-bx)/(ax-bx)] * ...
-        bx = ESSS.get_matrix_3d(points, k, j, 0)
-        numerator = Integer.mod((numerator * -bx), ESSS.get_prime())  # (0 - bx) * ...
-        denominator = Integer.mod((denominator * (ax - bx)), ESSS.get_prime())  # (ax - bx) * ...
+        bx = SSS.get_matrix_3d(points, k, j, 0)
+        numerator = Integer.mod((numerator * -bx), SSS.get_prime())  # (0 - bx) * ...
+        denominator = Integer.mod((denominator * (ax - bx)), SSS.get_prime())  # (ax - bx) * ...
         lpi_product_loop(step-1, count, j, i, ax, points, numerator, denominator)
       else
         lpi_product_loop(step-1, count, j, i, ax, points, numerator, denominator)
@@ -501,20 +501,20 @@ defmodule ESSS do
     def lpi_sum_loop(step, count, j, points, secrets) when count - step < count do
       i = count - step
       # remember the current x and y values.
-      ax = ESSS.get_matrix_3d(points, i, j, 0)
-      ay = ESSS.get_matrix_3d(points, i, j, 1)
+      ax = SSS.get_matrix_3d(points, i, j, 0)
+      ay = SSS.get_matrix_3d(points, i, j, 1)
       num_share = length(points)
 
       # and for every other point...
-      {numerator, denominator} = ESSS.LPIProductLoop.lpi_product_loop(num_share, num_share, j, i, ax, points, 1, 1)
+      {numerator, denominator} = SSS.LPIProductLoop.lpi_product_loop(num_share, num_share, j, i, ax, points, 1, 1)
 
       # LPI product: x=0, y = ay * [(x-bx)/(ax-bx)] * ...
       # multiply together the points (ay)(numerator)(denominator)^-1 ...
       fx = ay
-      fx = Integer.mod(fx * numerator, ESSS.get_prime())
-      fx = Integer.mod(fx * ESSS.modinv(denominator, ESSS.get_prime()), ESSS.get_prime())
+      fx = Integer.mod(fx * numerator, SSS.get_prime())
+      fx = Integer.mod(fx * SSS.modinv(denominator, SSS.get_prime()), SSS.get_prime())
       # LPI sum: s = fx + fx + ...
-      sum = Integer.mod(Enum.at(secrets, j) + fx, ESSS.get_prime())
+      sum = Integer.mod(Enum.at(secrets, j) + fx, SSS.get_prime())
       secrets = List.replace_at(secrets, j, sum)
 
       lpi_sum_loop(step-1, count, j, points, secrets)
@@ -529,7 +529,7 @@ defmodule ESSS do
       j = count - step
       num_share = length(points)
       # and every share...
-      secrets = ESSS.LPISumLoop.lpi_sum_loop(num_share, num_share, j, points, secrets)
+      secrets = SSS.LPISumLoop.lpi_sum_loop(num_share, num_share, j, points, secrets)
       lpi_secrets_loop(step-1, count, points, secrets)
     end
     def lpi_secrets_loop(0, _count, _points, secrets) do
@@ -562,7 +562,7 @@ defmodule ESSS do
       # For each part of the secrets (clearest to iterate over)...
       parts = length(Enum.at(points, 0))
       secrets = List.duplicate(0, parts)
-      secrets = ESSS.LPISecretsLoop.lpi_secrets_loop(parts, parts, points, secrets)
+      secrets = SSS.LPISecretsLoop.lpi_secrets_loop(parts, parts, points, secrets)
 
       {:ok, merge_int_to_string(secrets)}
     rescue

@@ -1,14 +1,14 @@
-# ESSS
-esss is an implement of Shamir's Secret Sharing Algorithm 256-bits in Elixir  
+# SSS
+sss is an implement of Shamir's Secret Sharing Algorithm 256-bits in Elixir  
 
 ## Installation
 
-Adding `esss` to your list of dependencies in `mix.exs`:  
+Adding `sss` to your list of dependencies in `mix.exs`:  
 
 ```elixir
 def deps do
   [
-    {:esss, "~> 0.1.0"}
+    {:sss, "~> 0.1.0"}
   ]
 end
 ```
@@ -21,10 +21,10 @@ end
 s = "nghiatcxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
 
 # Creates a set of shares
-case ESSS.create(3, 6, s, true) do
+case SSS.create(3, 6, s, true) do
   {:ok, list} ->
     # Case normal
-    case ESSS.combine(Enum.slice(list, 0, 3), true) do
+    case SSS.combine(Enum.slice(list, 0, 3), true) do
       {:ok, s1 } ->
         # IO.inspect(s1)
         assert s1 == s
@@ -40,9 +40,9 @@ end
 # or
 
 # Creates a set of shares
-list = ESSS.create!(3, 6, s, true)
+list = SSS.create!(3, 6, s, true)
 # Combines shares into secret
-s1 = ESSS.combine!(Enum.slice(list, 0, 3), true)
+s1 = SSS.combine!(Enum.slice(list, 0, 3), true)
 assert s1 == s
 ```
 
@@ -51,10 +51,10 @@ assert s1 == s
 s = "nghiatcxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
 
 # Creates a set of shares
-case ESSS.create(3, 6, s, false) do
+case SSS.create(3, 6, s, false) do
   {:ok, list} ->
     # Case normal
-    case ESSS.combine(Enum.slice(list, 0, 3), false) do
+    case SSS.combine(Enum.slice(list, 0, 3), false) do
       {:ok, s1 } ->
         assert s1 == s
       {:error, msg} ->
@@ -69,9 +69,9 @@ end
 # or
 
 # Creates a set of shares
-list = ESSS.create!(3, 6, s, false)
+list = SSS.create!(3, 6, s, false)
 # Combines shares into secret
-s1 = ESSS.combine!(Enum.slice(list, 0, 3), false)
+s1 = SSS.combine!(Enum.slice(list, 0, 3), false)
 assert s1 == s
 ```
 
